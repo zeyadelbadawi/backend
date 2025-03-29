@@ -1,9 +1,9 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { FileMetadata } from '../file/file.entity';  // Import FileMetadata
+import { FileMetadata } from '../file/file.entity';  
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()  // 👈 now it's an auto-incrementing integer
+  @PrimaryGeneratedColumn() 
   id: number;               
 
   @Column()
@@ -13,9 +13,8 @@ export class User {
   password: string;
 
   @Column({ default: 'user' })
-  role: string; // This can be 'user' or 'admin'
+  role: string; 
 
-  // One user can have many files
-  @OneToMany(() => FileMetadata, file => file.user)  // Defining the relation
+  @OneToMany(() => FileMetadata, file => file.user) 
   files: FileMetadata[];
 }

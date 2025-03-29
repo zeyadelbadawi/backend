@@ -1,11 +1,10 @@
-// src/auth/auth.controller.ts
 import { Controller, Post, Body, Get, Headers, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service'; 
-import { AuthGuard } from './auth.guard'; // Import AuthGuard to protect routes
-import { RolesGuard } from './roles.guard'; // Import RolesGuard to check roles
-import { Roles } from './roles.decorator'; // Import Roles decorator
+import { AuthGuard } from './auth.guard'; 
+import { RolesGuard } from './roles.guard';
+import { Roles } from './roles.decorator';
 import { Role } from './role.enum'; 
 
 @Controller('auth')
@@ -18,7 +17,6 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() createUserDto: any) {
-    // Set default role to 'user' if role is not provided
     if (!createUserDto.role) {
       createUserDto.role = 'user';
     }
@@ -30,7 +28,6 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  // This route will allow both admins and regular users to access their profiles
   @UseGuards(AuthGuard)
   @Get('profile')
   async getProfile(@Headers('authorization') authHeader: string) {
@@ -57,18 +54,16 @@ export class AuthController {
     }
   }
 
-  // Admin-only route to fetch users
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.Admin)
   @Get('users')
   async getUsers() {
-    return this.userService.findAll(); // Fetch all users
+    return this.userService.findAll(); 
   }
 
-  // New endpoint to check if username exists
   @Post('check-username')
   async checkUsername(@Body() body: { username: string }) {
     const usernameExists = await this.userService.findOne(body.username);
-    return { exists: !!usernameExists }; // Return true if username exists, false if not
+    return { exists: !!usernameExists }; 
   }
 }

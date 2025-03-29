@@ -16,7 +16,6 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  // Method to validate user credentials
   async validateUser(username: string, pass: string): Promise<any> {
     const user = await this.userService.findOne(username);
     if (user && bcrypt.compareSync(pass, user.password)) {
@@ -28,7 +27,6 @@ export class AuthService {
     return null;
   }
 
-  // Login method
   async login(user: User) {
     const userData = await this.userService.findOne(user.username);
 
@@ -56,7 +54,6 @@ export class AuthService {
     };
   }
 
-  // Registration method
   async register(createUserDto: CreateUserDto): Promise<User> {
     const role = createUserDto.role || 'user';
     const user = await this.userService.create(createUserDto.username, createUserDto.password, role);

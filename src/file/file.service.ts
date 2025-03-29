@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Logger } from '@nestjs/common';  // Import Logger
+import { Logger } from '@nestjs/common'; 
 import { FileMetadata } from './file.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -9,23 +9,22 @@ import * as pdf from 'pdf-parse';
 import * as Tesseract from 'tesseract.js';
 import * as XLSX from 'xlsx';
 import * as Papa from 'papaparse';
-import { FileGateway } from './file.gateway';  // Import the WebSocket Gateway
+import { FileGateway } from './file.gateway'; 
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';  // Import Queue from Bull
+import { Queue } from 'bull'; 
 
 @Injectable()
 export class FileService {
-  private readonly logger = new Logger(FileService.name);  // Create logger instance
+  private readonly logger = new Logger(FileService.name); 
 
   constructor(
     @InjectRepository(FileMetadata)
     private fileMetadataRepository: Repository<FileMetadata>,
-    private fileGateway: FileGateway,  // Inject the WebSocket Gateway
-    @InjectQueue('file-processing') private fileQueue: Queue,  // Inject Bull queue
+    private fileGateway: FileGateway,
+    @InjectQueue('file-processing') private fileQueue: Queue,  
   ) {}
 
   async processFile(file: Express.Multer.File, userId: number) {
-    // Ensure user ID is provided
     if (!userId) {
       this.logger.error('User ID is required for file upload');
       throw new Error('User ID is required');
@@ -33,14 +32,12 @@ export class FileService {
   
     this.logger.log(`User ${userId} is uploading file: ${file.originalname}`);
   
-    // Validate file type (only allowed types: PDF, image, CSV, Excel)
     const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'text/csv', 'application/vnd.ms-excel'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
       this.logger.error(`Invalid file type: ${file.mimetype}`);
       throw new Error('Invalid file format. Only PDF, image, CSV, and Excel files are allowed.');
     }
 
-    // Validate file size (Max size: 50MB)
     const maxSize = 50 * 1024 * 1024;  // 50MB
     if (file.size > maxSize) {
       this.logger.error(`File is too large: ${file.size} bytes`);
@@ -53,22 +50,18 @@ export class FileService {
     fileMetadata.mimeType = file.mimetype;
     fileMetadata.size = file.size;
     fileMetadata.path = path.join(__dirname, '../../uploads', file.filename);
-    fileMetadata.userId = userId;  // Ensure userId is assigned
+    fileMetadata.userId = userId;
   
-    // Log the file metadata being saved
     this.logger.log(`Saving file metadata for: ${fileMetadata.originalName}`);
   
-    // Save to database
     await this.fileMetadataRepository.save(fileMetadata);
   
-    // Emit real-time file upload status
     this.fileGateway.emitFileProcessingStatus(fileMetadata.id, 'File uploaded');
     this.logger.log(`File metadata saved for: ${fileMetadata.originalName}`);
   
-    // Add job to the queue
     try {
       this.logger.log(`Adding job to queue: ${fileMetadata.id}`);
-      await this.fileQueue.add(fileMetadata);  // Add job to the Bull queue
+      await this.fileQueue.add(fileMetadata);
     } catch (error) {
       this.logger.error('Error adding job to queue:', error);
     }
@@ -82,15 +75,13 @@ export class FileService {
   async processPDF(fileMetadata: FileMetadata, filePath: string) {
     try {
       const fileBuffer = fs.readFileSync(filePath);
-      const data = await pdf(fileBuffer);  // Extract text using pdf-parse
+      const data = await pdf(fileBuffer);  
       const textContent = data.text;
 
-      // Clean up extracted text
       const cleanedText = textContent
-        .replace(/\n+/g, ' ')          // Replace multiple newlines with a space
-        .replace(/\s{2,}/g, ' ')       // Replace multiple spaces with a single space
-        .trim();                      // Trim any leading or trailing whitespace
-
+        .replace(/\n+/g, ' ')          
+        .replace(/\s{2,}/g, ' ')       
+        .trim();                     
       fileMetadata.extractedData = cleanedText;
       this.logger.log(`Extracted text from PDF: ${cleanedText}`);
     } catch (error) {
@@ -102,8 +93,7 @@ export class FileService {
 
   async processImage(fileMetadata: FileMetadata, filePath: string) {
     try {
-      // Recognize text from the image (supporting multiple languages: English, Spanish, and German)
-      const { data: { text } } = await Tesseract.recognize(filePath, 'eng+spa+deu'); // Multilingual support (English + Spanish + German)
+      const { data: { text } } = await Tesseract.recognize(filePath, 'eng+spa+deu'); //(English + Spanish + German)
       fileMetadata.extractedData = text;
       this.logger.log(`Extracted text from image: ${text}`);
     } catch (error) {
@@ -119,7 +109,7 @@ export class FileService {
         const csvFile = fs.readFileSync(filePath, 'utf-8');
         Papa.parse(csvFile, {
           complete: (result) => {
-            fileMetadata.extractedData = JSON.stringify(result.data); // Save parsed CSV data
+            fileMetadata.extractedData = JSON.stringify(result.data); 
             this.logger.log('Parsed CSV data:', result.data);
           },
         });
@@ -127,9 +117,9 @@ export class FileService {
         const excelFile = fs.readFileSync(filePath);
         const workbook = XLSX.read(excelFile, { type: 'buffer' });
         const sheetNames = workbook.SheetNames;
-        const sheet = workbook.Sheets[sheetNames[0]]; // Read the first sheet
+        const sheet = workbook.Sheets[sheetNames[0]]; 
         const sheetData = XLSX.utils.sheet_to_json(sheet);
-        fileMetadata.extractedData = JSON.stringify(sheetData); // Save parsed Excel data
+        fileMetadata.extractedData = JSON.stringify(sheetData); 
         this.logger.log('Parsed Excel data:', sheetData);
       }
     } catch (error) {

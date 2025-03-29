@@ -10,17 +10,17 @@ import * as pdf from 'pdf-parse';
 import * as Tesseract from 'tesseract.js';
 import * as XLSX from 'xlsx';
 import * as Papa from 'papaparse';
-import { FileGateway } from './file.gateway';  // Import the WebSocket Gateway
+import { FileGateway } from './file.gateway'; 
 
 @Processor('file-processing')
 @Injectable()
 export class FileProcessor {
-  private readonly logger = new Logger(FileProcessor.name);  // Create logger instance
+  private readonly logger = new Logger(FileProcessor.name); 
 
   constructor(
     @InjectRepository(FileMetadata)
-    private fileMetadataRepository: Repository<FileMetadata>,  // Inject repository
-    private fileGateway: FileGateway,  // Inject WebSocket Gateway
+    private fileMetadataRepository: Repository<FileMetadata>,  
+    private fileGateway: FileGateway,  
   ) {}
 
   @Process()
@@ -29,7 +29,6 @@ export class FileProcessor {
 
     const fileMetadata = job.data;
 
-    // Emit real-time processing update
     this.fileGateway.emitFileProcessingStatus(fileMetadata.id, 'Processing started');
 
     const filePath = path.join(__dirname, '../../uploads', fileMetadata.fileName);
@@ -49,11 +48,9 @@ export class FileProcessor {
       this.logger.error('Error during file processing:', error);
     }
 
-    // Mark file as completed
     fileMetadata.status = 'completed';
     this.fileGateway.emitFileProcessingStatus(fileMetadata.id, 'Processing completed');
 
-    // Save processed file metadata
     await this.fileMetadataRepository.save(fileMetadata);
   }
 
@@ -62,15 +59,12 @@ export class FileProcessor {
       const fileBuffer = fs.readFileSync(filePath);
       const data = await pdf(fileBuffer);
 
-      // If the PDF has text in multiple languages (e.g., English and Spanish)
       const textContent = data.text;
 
-      // Clean up extracted text
       const cleanedText = textContent
-        .replace(/\n+/g, ' ')          // Replace multiple newlines with a space
-        .replace(/\s{2,}/g, ' ')       // Replace multiple spaces with a single space
-        .trim();                      // Trim any leading or trailing whitespace
-
+        .replace(/\n+/g, ' ')         
+        .replace(/\s{2,}/g, ' ')    
+        .trim();                    
       fileMetadata.extractedData = cleanedText;
       this.logger.log(`Extracted text from PDF: ${cleanedText}`);
     } catch (error) {
@@ -82,8 +76,7 @@ export class FileProcessor {
 
   async processImage(fileMetadata: FileMetadata, filePath: string) {
     try {
-      // Recognize text from the image (supporting multiple languages)
-      const { data: { text } } = await Tesseract.recognize(filePath, 'eng+spa'); // Multilingual support (English + Spanish)
+      const { data: { text } } = await Tesseract.recognize(filePath, 'eng+spa'); 
       fileMetadata.extractedData = text;
       this.logger.log(`Extracted text from image: ${text}`);
     } catch (error) {
@@ -99,7 +92,7 @@ export class FileProcessor {
         const csvFile = fs.readFileSync(filePath, 'utf-8');
         Papa.parse(csvFile, {
           complete: (result) => {
-            fileMetadata.extractedData = JSON.stringify(result.data); // Save parsed CSV data
+            fileMetadata.extractedData = JSON.stringify(result.data); 
             this.logger.log('Parsed CSV data:', result.data);
           },
         });
@@ -107,9 +100,9 @@ export class FileProcessor {
         const excelFile = fs.readFileSync(filePath);
         const workbook = XLSX.read(excelFile, { type: 'buffer' });
         const sheetNames = workbook.SheetNames;
-        const sheet = workbook.Sheets[sheetNames[0]]; // Read the first sheet
+        const sheet = workbook.Sheets[sheetNames[0]];
         const sheetData = XLSX.utils.sheet_to_json(sheet);
-        fileMetadata.extractedData = JSON.stringify(sheetData); // Save parsed Excel data
+        fileMetadata.extractedData = JSON.stringify(sheetData); 
         this.logger.log('Parsed Excel data:', sheetData);
       }
     } catch (error) {

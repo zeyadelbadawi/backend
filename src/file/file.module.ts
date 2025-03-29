@@ -9,15 +9,15 @@ import { FileGateway } from './file.gateway';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([FileMetadata]),  // For accessing file metadata in DB
+    TypeOrmModule.forFeature([FileMetadata]), 
     BullModule.forRoot({
       redis: {
-        host: 'localhost',  // Redis server address
-        port: 6379,         // Redis server port
+        host: 'localhost', 
+        port: 6379,         
       },
     }),
     BullModule.registerQueue({
-      name: 'file-processing',  // Name of the queue
+      name: 'file-processing', 
     }),
   ],
   controllers: [FileController],

@@ -1,20 +1,19 @@
-// src/auth/auth.module.ts
 import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { UserModule } from '../user/user.module';  // Import UserModule
+import { UserModule } from '../user/user.module';  
 import { JwtStrategy } from './jwt.strategy'; 
 
 @Module({
   imports: [
     JwtModule.register({
-      secret: 'secretKey', // Use environment variables in production
+      secret: 'secretKey', 
       signOptions: { expiresIn: '60m' },
     }),
-    forwardRef(() => UserModule),  // Use forwardRef to resolve circular dependency
+    forwardRef(() => UserModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy], // Add JwtStrategy to providers here
+  providers: [AuthService, JwtStrategy],
 })
 export class AuthModule {}
