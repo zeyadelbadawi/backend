@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.WS_CORS_ORIGIN, // Retrieve from environment variable
+    origin: process.env.CORS_ORIGIN, // Retrieve from environment variable
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
