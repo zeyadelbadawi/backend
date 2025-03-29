@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    origin: ['https://front-end-five-vert.vercel.app/'],  
+    origin: process.env.WS_CORS_ORIGIN, // Retrieve from environment variable
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
