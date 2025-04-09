@@ -1,98 +1,164 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# File Upload and Analysis System – Backend (NestJS)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This is the backend implementation of the **File Upload and Analysis System**, a secure, scalable, and extensible system built with **NestJS**. It provides APIs for user authentication, file uploading, data extraction, and real-time processing notifications using WebSockets and queues.
 
-## Description
+## Overview
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The system enables users to register, authenticate, upload files, and receive insights from extracted content (PDF, CSV, images). Admins have additional privileges such as monitoring user uploads and analytics. The backend handles:
 
-## Project setup
+- Authentication (JWT-based)
+- Role-based access (user/admin)
+- File storage and metadata tracking
+- Data extraction from PDFs, images (OCR), and structured files
+- Background processing (Bull + Redis)
+- WebSocket-based real-time updates
+- Database storage using Prisma ORM
 
-```bash
-$ npm install
+## Features
+
+### Authentication and Authorization
+
+- User registration and login with JWT tokens
+- Passwords hashed using bcrypt
+- Role-based guards (admin/user)
+- Token validation via Passport strategies
+
+**Endpoints:**
+- `POST /auth/register` - Register new users
+- `POST /auth/login` - Authenticate users and issue tokens
+- `GET /auth/profile` - Get authenticated user profile
+
+### File Upload and Processing
+
+- Upload multiple files with validation
+- Metadata saved in database
+- Background job processing using Bull queues
+- Extraction support:
+  - Text from PDFs
+  - OCR from images using Tesseract
+  - Structured parsing from CSV/XLSX
+- Tracks processing status and errors
+- Stores results in JSON format
+
+**Endpoints:**
+- `POST /upload` - Upload one or more files
+- `GET /files` - Paginated list of user files
+- `GET /files/:id` - File details and processed data
+
+### Real-Time Notifications
+
+- WebSocket gateway to notify clients of processing completion or errors
+- Gateway emits events like:
+  - `fileProcessingStarted`
+  - `fileProcessingCompleted`
+  - `fileProcessingError`
+
+### Admin and User Roles
+
+- Admins can view all uploaded files and monitor system usage
+- Users can only access their own files and history
+
+### Logging and Error Handling
+
+- Consistent exception handling via global filters
+- File-specific and system logs are maintained
+- Guards and interceptors enforce access rules and logging
+
+## Project Structure
+
+```
+src/
+├── auth/                  # Authentication (controllers, services, guards)
+├── file/                  # File handling logic and real-time gateway
+│   ├── file.controller.ts
+│   ├── file.service.ts
+│   ├── file.processor.ts
+│   ├── file.gateway.ts
+│   ├── file.entity.ts
+│   ├── file.module.ts
+├── user/                  # User service and role logic
+├── jobs/                  # Queue setup for background processing
+├── common/                # DTOs, interfaces, decorators
+├── main.ts                # Entry point
+├── app.module.ts          # Root module
 ```
 
-## Compile and run the project
+## Technologies Used
 
-```bash
-# development
-$ npm run start
+- **Framework**: NestJS
+- **Authentication**: Passport + JWT
+- **ORM**: Prisma
+- **Database**: PostgreSQL
+- **Background Jobs**: Bull + Redis
+- **OCR**: Tesseract.js
+- **PDF Parsing**: pdf-lib
+- **Structured Files**: papaparse, xlsx
+- **WebSocket**: NestJS Gateway
+- **File Upload**: Multer
+- **Validation**: class-validator + pipes
+- **Environment Config**: @nestjs/config
 
-# watch mode
-$ npm run start:dev
+## Environment Setup
 
-# production mode
-$ npm run start:prod
+Create a `.env` file in the root:
+
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/yourdb
+JWT_SECRET=your_jwt_secret
+REDIS_HOST=localhost
+REDIS_PORT=6379
 ```
 
-## Run tests
+## Installation
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Running the Application
 
 ```bash
-$ npm install -g mau
-$ mau deploy
+# Start PostgreSQL and Redis first
+
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Redis Setup (Linux/Mac)
 
-## Resources
+```bash
+brew install redis
+redis-server
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## Docker Support
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+You can use Docker for a complete backend environment including Redis and PostgreSQL.
 
-## Support
+```bash
+docker-compose up --build
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Testing
 
-## Stay in touch
+Unit and integration tests are written using Jest.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+npm run test
+```
+
+## API Documentation
+
+Refer to `API_Documentation.md` in the project for all available endpoints and usage.
+
+## Development Notes
+
+- File uploads use `Multer` with filters and limits
+- Each file is processed as a separate job to avoid blocking the main thread
+- Real-time updates are broadcast using WebSockets
+- Processing logs include timestamps, errors, and extracted snippets
+- Files are tied to user IDs for isolation and security
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT License
